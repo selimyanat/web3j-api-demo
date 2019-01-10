@@ -1,0 +1,5 @@
+web3j:
+  http:
+    client-address: http://localhost:8545
+  ws:
+    client-address: ws://localhost:8546

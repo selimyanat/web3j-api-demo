@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  ganache-cli:
+    image: trufflesuite/ganache-cli:v6.4.1
+    command: --gasLimit 0xfffffffffff  --blockTime 20 --defaultBalanceEther 3000000
+    ports:
+      - 8545:8545
