@@ -44,18 +44,25 @@ connect the Ethereum node.
 ###  Maven
 
 Open your terminal, navigate to the `web3j.api.demo` source directory then run the following command
-`mvn spring-boot:run`.
+```
+mvn spring-boot:run
+```
 
 ### Java
 
 Open your terminal, navigate to the `web3j.api.demo` source directory then run the following command 
-`java -jar target/web3j-api-demo-1.0-0-SNAPSHOT.jar`
+
+```
+java -jar target/web3j-api-demo-1.0-0-SNAPSHOT.jar
+```
 
 
 ### Note
 If you have an Ethereum node that supports WebSockets protocol you can add the VM options 
-`-Dspring.profiles.active=rpc-ws` while running the application. For instance 
-`mvn spring-boot:run -Dspring.profiles.active=rpc-ws` .
+`-Dspring.profiles.active=rpc-ws` while running the application. For instance:
+```
+mvn spring-boot:run -Dspring.profiles.active=rpc-ws
+```
 
 ## Technical Environment
 
