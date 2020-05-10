@@ -110,7 +110,7 @@ public class BlockchainServiceTest {
   }
 
   @Test
-  void enableSubscriptions_allListeners_areCalled() {
+  void afterPropertiesSet_allListeners_areCalled() throws Exception {
     var nbOfBlocks = new AtomicInteger(0);
     final BlockListener blockListener = blockHash -> nbOfBlocks.incrementAndGet();
     var nbOfTransactions = new AtomicInteger(0);
@@ -121,7 +121,7 @@ public class BlockchainServiceTest {
     when(web3j.transactionFlowable()).thenReturn(TransactionSubscriptionFactory.monoTransaction());
     underTest.addTransactionListener(transactionListener);
 
-    underTest.enableSubscriptions();
+    underTest.afterPropertiesSet();
     assertThat(nbOfBlocks.get())
         .withFailMessage("There should be one block.")
         .isEqualTo(1);
@@ -256,7 +256,7 @@ public class BlockchainServiceTest {
   }
 
   @Test
-  void shutdown_removeListeners_and_removeBlockchainSubscriptions() {
+  void destroy_removeListeners_and_removeBlockchainSubscriptions() throws Exception {
 
     var blockSubscription = mock(Disposable.class);
     underTest.setBlockSubscription(blockSubscription);
@@ -265,7 +265,7 @@ public class BlockchainServiceTest {
     underTest.addBlockListener(blockHash -> LOG.info("Am a block listener"));
     underTest.addTransactionListener(transactionHash -> LOG.info("Am a transaction listener"));
 
-    underTest.shutdown();
+    underTest.destroy();
 
     // @formatter:off
     assertAll(

@@ -13,8 +13,6 @@ import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
@@ -22,6 +20,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.Transaction;
@@ -34,7 +34,7 @@ import org.web3j.utils.Convert.Unit;
  * @author selim
  */
 @Slf4j
-public class BlockchainService {
+public class BlockchainService implements InitializingBean, DisposableBean {
 
   static final BigInteger GAS_PRICE = BigInteger.valueOf(200_000_0000L);
 
@@ -75,27 +75,18 @@ public class BlockchainService {
   /**
    * Subscribe to blockchain notifications on block and transaction.
    */
-  @VisibleForTestOnly
-  @PostConstruct
-  void enableSubscriptions() {
-    blockSubscription = web3j.blockFlowable(false)
-        .map(
-            block -> block.getBlock().getHash())
-        .doOnSubscribe(
-            subscription -> LOG.info("Subscribe to newly block created on the blockchain."))
-        .subscribe(
-            blockHash -> blockListeners.forEach(blockListener -> blockListener.onNewBlock(blockHash)),
-            throwable -> LOG.error("Could not subscribe to block notifications:", throwable));
+  @Override
+  public void afterPropertiesSet() throws Exception {
+    enableSubscriptions();
+  }
 
-    transactionSubscription = web3j.transactionFlowable()
-        .map(
-            transaction -> transaction.getHash())
-          .doOnSubscribe(
-            subscription -> LOG.info("Subscribe to newly transactions confirmed on the blockchain."))
-        .subscribe(
-            transactionHash -> this.transactionListeners
-                .forEach(listeners -> listeners.onTransactionConfirmed(transactionHash)),
-            throwable -> LOG.error("Could not subscribe to transactions notifications:", throwable));
+  /**
+   * Graceful shutdown by removing all block and transaction listeners along with the blockchain
+   * subscription.
+   */
+  @Override
+  public void destroy() throws Exception {
+    shutdown();
   }
 
   /**
@@ -210,13 +201,7 @@ public class BlockchainService {
     transactionListeners.remove(transactionListener);
   }
 
-  /**
-   * Graceful shutdown by removing all block and transaction listeners along with the blockchain
-   * subscription.
-   */
-  @VisibleForTestOnly
-  @PreDestroy
-  void shutdown() {
+  private void shutdown() {
     blockListeners.clear();
     transactionListeners.clear();
     LOG.info("Block and transaction listeners have been successfully unregistered.");
@@ -231,4 +216,24 @@ public class BlockchainService {
             throwable.getMessage()));
   }
 
+  private void enableSubscriptions() {
+    blockSubscription = web3j.blockFlowable(false)
+        .map(
+            block -> block.getBlock().getHash())
+        .doOnSubscribe(
+            subscription -> LOG.info("Subscribe to newly block created on the blockchain."))
+        .subscribe(
+            blockHash -> blockListeners.forEach(blockListener -> blockListener.onNewBlock(blockHash)),
+            throwable -> LOG.error("Could not subscribe to block notifications:", throwable));
+
+    transactionSubscription = web3j.transactionFlowable()
+        .map(
+            transaction -> transaction.getHash())
+        .doOnSubscribe(
+            subscription -> LOG.info("Subscribe to newly transactions confirmed on the blockchain."))
+        .subscribe(
+            transactionHash -> this.transactionListeners
+                .forEach(listeners -> listeners.onTransactionConfirmed(transactionHash)),
+            throwable -> LOG.error("Could not subscribe to transactions notifications:", throwable));
+  }
 }
